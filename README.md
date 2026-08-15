@@ -31,7 +31,7 @@ panama-prova/
     └── main/
         └── java/
             └── com/xavierger/
-                ├── Calculadora.java  # Java wrapper binding FFM API to C functions
+                ├── Calculator.java   # Java wrapper binding FFM API to C functions
                 └── Main.java         # Entry point demonstrating scalar and array additions
 ```
 
@@ -74,7 +74,7 @@ clang -dynamiclib -o native/libcalcul.dylib native/calcul.c
 ```bash
 gcc -shared -fPIC -o native/libcalcul.so native/calcul.c
 ```
-*(Note: If running on Linux or Windows, update the library path/extension in `Calculadora.java` accordingly).*
+*(Note: If running on Linux or Windows, update the library path/extension in `Calculator.java` accordingly).*
 
 ### 2. Run the Java Application
 
