@@ -39,7 +39,7 @@ panama-prova/
 
 ## Native Functions (C)
 
-The native library in `native/calcul.c` exposes two functions:
+The native library in `native/calcul.c` exposes three functions:
 
 ```c
 // Adds two double-precision floating-point numbers
@@ -47,6 +47,9 @@ double suma(double a, double b);
 
 // Sums an array of double-precision numbers of length n
 double suma_array(double *valores, int n);
+
+// Duplicates each element in an array in-place
+void duplicar_array(double *valores, int n);
 ```
 
 ---
@@ -99,10 +102,21 @@ When running `Main.java`, the output will be:
 ```text
 6.2
 10.0
+Abans:
+1.0
+2.0
+3.0
+4.0
+Després:
+2.0
+4.0
+6.0
+8.0
 ```
 
 - `6.2`: Result of `calculator.suma(2.5, 3.7)`
-- `10.0`: Result of `calculator.sumaArray(new double[]{1.0, 2.0, 3.0, 4.0})`
+- `10.0`: Result of `calculator.sumaArray(...)`
+- `Abans` / `Després`: Output before and after `calculator.duplicarArray(...)` modifies the array in C and syncs back to Java.
 
 ---
 
@@ -149,3 +163,80 @@ try (Arena arena = Arena.ofConfined()) {
 }
 // Native memory is automatically freed when exiting the try-with-resources block!
 ```
+### 3. Modifying Arrays in C and Reflecting Changes in Java (`duplicar_array`)
+
+When native C code modifies an array in-place, the mutation occurs directly within off-heap native memory. Because Project Panama maintains a strict separation between Java's garbage-collected heap and off-heap native memory, changes are not automatically reflected in Java heap arrays.
+
+#### C Implementation (`native/calcul.c`)
+
+```c
+void duplicar_array(double *valores, int n) {
+    for (int i = 0; i < n; i++) {
+        valores[i] = valores[i] * 2.0;
+    }
+}
+```
+
+#### Java Implementation (`Calculator.java`)
+
+```java
+try (Arena arena = Arena.ofConfined()) {
+    // 1. Allocate native memory off-heap
+    MemorySegment memoria = arena.allocate(ValueLayout.JAVA_DOUBLE, valores.length);
+
+    // 2. Copy initial values from Java heap array to native memory
+    memoria.copyFrom(MemorySegment.ofArray(valores));
+
+    // 3. Invoke native function to modify native memory in-place
+    duplicarArrayHandle.invokeExact(memoria, (int) valores.length);
+
+    // 4. Copy the modified data from native memory back to the Java heap array
+    MemorySegment.ofArray(valores).copyFrom(memoria);
+}
+```
+
+#### Memory Synchronization Flow
+
+```text
+Java Heap (double[])
+┌─────┐
+│ 1.0 │
+│ 2.0 │
+│ 3.0 │
+│ 4.0 │
+└─────┘
+   │
+   │ 1. copyFrom (Heap -> Native)
+   ▼
+Native Memory (MemorySegment)
+┌─────┐
+│ 1.0 │
+│ 2.0 │
+│ 3.0 │
+│ 4.0 │
+└─────┘
+   │
+   │ 2. C modifies values in-place (* 2.0)
+   ▼
+Native Memory (MemorySegment)
+┌─────┐
+│ 2.0 │
+│ 4.0 │
+│ 6.0 │
+│ 8.0 │
+└─────┘
+   │
+   │ 3. copyFrom (Native -> Heap)
+   ▼
+Java Heap (double[])
+┌─────┐
+│ 2.0 │
+│ 4.0 │
+│ 6.0 │
+│ 8.0 │
+└─────┘
+```
+
+> **Key Concept:** Project Panama does not automatically synchronize Java heap arrays with native memory. To mutate an array in native code and see the resulting changes in Java, two explicit copy operations are required:
+> 1. **Heap to Native:** Copy the Java `double[]` into the native `MemorySegment` before calling the C function.
+> 2. **Native to Heap:** Copy the updated `MemorySegment` back into the Java `double[]` after the C function completes.

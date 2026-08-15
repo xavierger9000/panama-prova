@@ -13,3 +13,9 @@ double suma_array(double *valores, int n) {
 
     return suma;
 }
+
+void duplicar_array(double *valores, int n) {
+    for (int i = 0; i < n; i++) {
+        valores[i] = valores[i] * 2.0;
+    }
+}

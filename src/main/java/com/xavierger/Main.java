@@ -20,5 +20,20 @@ public class Main {
         double sum = calculator.sumaArray(values);
 
         IO.println(sum);
+
+
+        System.out.println("Abans:");
+
+        for (double value : values) {
+            System.out.println(value);
+        }
+
+        calculator.duplicarArray(values);
+
+        System.out.println("Després:");
+
+        for (double valor : values) {
+            System.out.println(valor);
+        }
     }
 }

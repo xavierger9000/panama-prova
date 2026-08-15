@@ -12,6 +12,7 @@ public class Calculator {
 
     private final MethodHandle sumaHandle;
     private final MethodHandle sumaArrayHandle;
+    private final MethodHandle duplicarArrayHandle;
 
     public Calculator() {
 
@@ -56,6 +57,21 @@ public class Calculator {
                 sumaArrayAddress,
                 sumaArrayDescriptor
         );
+
+        // duplicar_array(double*, int)
+        MemorySegment duplicarArrayAddress = library.find("duplicar_array")
+                .orElseThrow();
+
+        FunctionDescriptor duplicarArrayDescriptor =
+                FunctionDescriptor.ofVoid(
+                        ValueLayout.ADDRESS,
+                        ValueLayout.JAVA_INT
+                );
+
+        duplicarArrayHandle = linker.downcallHandle(
+                duplicarArrayAddress,
+                duplicarArrayDescriptor
+        );
     }
 
     public double suma(double a, double b) throws Throwable {
@@ -90,6 +106,29 @@ public class Calculator {
                     memoria,
                     (int) valores.length
             );
+        }
+    }
+
+    public void duplicarArray(double[] valores) throws Throwable {
+
+        try (Arena arena = Arena.ofConfined()) {
+
+            MemorySegment memoria = arena.allocate(
+                    ValueLayout.JAVA_DOUBLE,
+                    valores.length
+            );
+
+            memoria.copyFrom(
+                    MemorySegment.ofArray(valores)
+            );
+
+            duplicarArrayHandle.invokeExact(
+                    memoria,
+                    (int) valores.length
+            );
+
+            MemorySegment.ofArray(valores)
+                    .copyFrom(memoria);
         }
     }
 }
