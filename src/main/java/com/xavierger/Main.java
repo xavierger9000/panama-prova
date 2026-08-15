@@ -2,7 +2,7 @@ package com.xavierger;
 
 public class Main {
 
-    public static void main(String[] args) throws Throwable {
+    static void main() throws Throwable {
 
         Calculadora calculadora = new Calculadora();
 
