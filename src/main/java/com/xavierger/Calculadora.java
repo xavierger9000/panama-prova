@@ -11,6 +11,7 @@ import java.lang.invoke.MethodHandle;
 public class Calculadora {
 
     private final MethodHandle sumaHandle;
+    private final MethodHandle sumaArrayHandle;
 
     public Calculadora() {
 
@@ -19,28 +20,76 @@ public class Calculadora {
                 "native/libcalcul.dylib",
                 Arena.global()
         );
+        Linker linker = Linker.nativeLinker();
+
+        // suma(double, double)
 
         // Representa una adreça de memòria nativa on es troba la funció suma
         MemorySegment sumaAddress = library.find("suma")
                 .orElseThrow();
 
-        // Descriu la signatura de la funció suma
-        FunctionDescriptor descriptor = FunctionDescriptor.of(
-                ValueLayout.JAVA_DOUBLE,
-                ValueLayout.JAVA_DOUBLE,
-                ValueLayout.JAVA_DOUBLE
-        );
+        FunctionDescriptor sumaDescriptor =
+                FunctionDescriptor.of(
+                        ValueLayout.JAVA_DOUBLE,
+                        ValueLayout.JAVA_DOUBLE,
+                        ValueLayout.JAVA_DOUBLE
+                );
 
-        Linker linker = Linker.nativeLinker();
-
-        // Crea una handle per a la funció suma, permet fer la crida a la funció suma
         sumaHandle = linker.downcallHandle(
                 sumaAddress,
-                descriptor
+                sumaDescriptor
+        );
+
+        // suma_array(double*, int)
+
+        MemorySegment sumaArrayAddress = library.find("suma_array")
+                .orElseThrow();
+
+        FunctionDescriptor sumaArrayDescriptor =
+                FunctionDescriptor.of(
+                        ValueLayout.JAVA_DOUBLE,
+                        ValueLayout.ADDRESS,
+                        ValueLayout.JAVA_INT
+                );
+
+        sumaArrayHandle = linker.downcallHandle(
+                sumaArrayAddress,
+                sumaArrayDescriptor
         );
     }
 
     public double suma(double a, double b) throws Throwable {
         return (double) sumaHandle.invokeExact(a, b);
+    }
+
+    public double sumaArray(double[] valores) throws Throwable {
+
+        try (Arena arena = Arena.ofConfined()) {
+
+            /* Zona de memòria nativa accessible per a C
+               Això eserva espai natiu per: 4 × 8 bytes = 32 bytes
+            Java heap                    Memòria nativa
+            double[]                     MemorySegment
+            ┌──────────┐                 ┌──────────┐
+            │   1.0    │ ──────────────► │   1.0    │
+            │   2.0    │                 │   2.0    │
+            │   3.0    │                 │   3.0    │
+            │   4.0    │                 │   4.0    │
+            └──────────┘                 └──────────┘
+             */
+            MemorySegment memoria = arena.allocate(
+                    ValueLayout.JAVA_DOUBLE,
+                    valores.length
+            );
+
+            memoria.copyFrom(
+                    MemorySegment.ofArray(valores)
+            );
+
+            return (double) sumaArrayHandle.invokeExact(
+                    memoria,
+                    (int) valores.length
+            );
+        }
     }
 }

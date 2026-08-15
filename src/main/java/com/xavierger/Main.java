@@ -6,8 +6,19 @@ public class Main {
 
         Calculadora calculadora = new Calculadora();
 
-        double resultat = calculadora.suma(2.5, 3.7);
+        double result = calculadora.suma(2.5, 3.7);
 
-        System.out.println(resultat);
+        IO.println(result);
+
+        double[] valors = {
+                1.0,
+                2.0,
+                3.0,
+                4.0
+        };
+
+        double suma = calculadora.sumaArray(valors);
+
+        IO.println(suma);
     }
 }
