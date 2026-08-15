@@ -8,12 +8,12 @@ import java.lang.foreign.SymbolLookup;
 import java.lang.foreign.ValueLayout;
 import java.lang.invoke.MethodHandle;
 
-public class Calculadora {
+public class Calculator {
 
     private final MethodHandle sumaHandle;
     private final MethodHandle sumaArrayHandle;
 
-    public Calculadora() {
+    public Calculator() {
 
         // Busca la funció suma en el fitxer natiu libcalcul.dylib
         SymbolLookup library = SymbolLookup.libraryLookup(

@@ -4,21 +4,21 @@ public class Main {
 
     static void main() throws Throwable {
 
-        Calculadora calculadora = new Calculadora();
+        Calculator calculator = new Calculator();
 
-        double result = calculadora.suma(2.5, 3.7);
+        double result = calculator.suma(2.5, 3.7);
 
         IO.println(result);
 
-        double[] valors = {
+        double[] values = {
                 1.0,
                 2.0,
                 3.0,
                 4.0
         };
 
-        double suma = calculadora.sumaArray(valors);
+        double sum = calculator.sumaArray(values);
 
-        IO.println(suma);
+        IO.println(sum);
     }
 }
