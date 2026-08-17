@@ -98,6 +98,16 @@ public class Calculator {
                     valores.length
             );
 
+            /*
+            * Java heap                  Memòria nativa
+            double[]                     MemorySegment
+            ┌──────────┐                 ┌──────────┐
+            │   1.0    │ ──────────────► │   1.0    │
+            │   2.0    │                 │   2.0    │
+            │   3.0    │                 │   3.0    │
+            │   4.0    │                 │   4.0    │
+            └──────────┘                 └──────────┘
+            * */
             memoria.copyFrom(
                     MemorySegment.ofArray(valores)
             );
@@ -129,6 +139,43 @@ public class Calculator {
 
             MemorySegment.ofArray(valores)
                     .copyFrom(memoria);
+        }
+    }
+
+    public void provarMemoriaNativa() throws Throwable {
+
+        try (Arena arena = Arena.ofConfined()) {
+
+            MemorySegment memoria = arena.allocate(
+                    ValueLayout.JAVA_DOUBLE,
+                    4
+            );
+
+            memoria.set(ValueLayout.JAVA_DOUBLE, 0, 1.0);
+            memoria.set(ValueLayout.JAVA_DOUBLE, 8, 2.0);
+            memoria.set(ValueLayout.JAVA_DOUBLE, 16, 3.0);
+            memoria.set(ValueLayout.JAVA_DOUBLE, 24, 4.0);
+
+            duplicarArrayHandle.invokeExact(
+                    memoria,
+                    4
+            );
+
+            System.out.println(
+                    memoria.get(ValueLayout.JAVA_DOUBLE, 0)
+            );
+
+            System.out.println(
+                    memoria.get(ValueLayout.JAVA_DOUBLE, 8)
+            );
+
+            System.out.println(
+                    memoria.get(ValueLayout.JAVA_DOUBLE, 16)
+            );
+
+            System.out.println(
+                    memoria.get(ValueLayout.JAVA_DOUBLE, 24)
+            );
         }
     }
 }

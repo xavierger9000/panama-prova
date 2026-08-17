@@ -35,5 +35,7 @@ public class Main {
         for (double valor : values) {
             System.out.println(valor);
         }
+
+        calculator.provarMemoriaNativa();
     }
 }
